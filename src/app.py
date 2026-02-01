@@ -50,6 +50,45 @@ class ScreenResponse(BaseModel):
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+STATIC_DIR = BASE_DIR / "static"
+
+app = FastAPI(title="Lynch Screener")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+def _build_payload(results: list) -> list[ScreenResultPayload]:
+    return [
+        ScreenResultPayload(
+            ticker=result.ticker,
+            name=result.name,
+            score=result.score,
+            rating=result.rating,
+            category=result.category,
+            metrics=result.metrics,
+            reasons=[ReasonPayload(**asdict(reason)) for reason in result.reasons],
+        )
+        for result in results
+    ]
+
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request, demo: bool = False) -> HTMLResponse:
+    results_payload: list[ScreenResultPayload] = []
+    if demo:
+        provider = StubProvider()
+        fundamentals = [provider.get_fundamentals(ticker) for ticker in provider.list_universe()]
+        results = screen_fundamentals(fundamentals, "balanced")
+        results_payload = _build_payload(results)
+
+    return TEMPLATES.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "results": results_payload,
+            "results_json": json.dumps([payload.model_dump() for payload in results_payload]),
+            "static_prefix": "/static",
+        },
+    )
 
 app = FastAPI(title="Lynch Screener")
 
