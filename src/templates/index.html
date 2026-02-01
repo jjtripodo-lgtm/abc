@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lynch Screener</title>
+  <link rel="stylesheet" href="{{ static_prefix }}/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <h1>Peter Lynch Stock Screener</h1>
+      <p>Run a transparent screen with deterministic stub data to see ranked results and reasons.</p>
+    </div>
+    <div class="actions">
+      <button id="export-json" type="button">Export JSON</button>
+      <button id="export-csv" type="button">Export CSV</button>
+    </div>
+  </header>
+
+  <section class="controls">
+    <form id="screen-form">
+      <label>
+        Tickers (comma-separated):
+        <textarea id="tickers" name="tickers" placeholder="AAPL, MSFT, NVDA"></textarea>
+      </label>
+      <label>
+        Provider:
+        <select id="provider" name="provider">
+          <option value="stub" selected>Stub Universe (10 tickers)</option>
+        </select>
+      </label>
+      <label>
+        Risk tolerance:
+        <select id="risk" name="risk">
+          <option value="conservative">Conservative</option>
+          <option value="balanced" selected>Balanced</option>
+          <option value="aggressive">Aggressive</option>
+        </select>
+      </label>
+      <details class="advanced">
+        <summary>Advanced options</summary>
+        <div class="advanced-grid">
+          <label>
+            Min market cap (USD):
+            <input id="min-market-cap" name="min_market_cap" type="number" placeholder="10000000000" />
+          </label>
+          <label>
+            Min liquidity (USD):
+            <input id="min-liquidity" name="min_liquidity" type="number" placeholder="1000000" />
+          </label>
+          <label>
+            Sector exclusions:
+            <input id="sector-exclusions" name="sector_exclusions" type="text" placeholder="Energy, Utilities" />
+          </label>
+        </div>
+      </details>
+      <button id="run" type="submit">Run Screen</button>
+    </form>
+  </section>
+
+  <section class="results">
+    <div class="results-header">
+      <h2>Results</h2>
+      <div id="status">Enter tickers or use the stub universe, then click Run Screen.</div>
+    </div>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th data-sort="ticker">Company</th>
+          <th data-sort="score">Score</th>
+          <th data-sort="category">Category</th>
+          <th data-sort="pe_ratio">Key Metrics</th>
+          <th>Reasons</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if results %}
+          {% for result in results %}
+            <tr>
+              <td>
+                <strong>{{ result.ticker }}</strong><br />
+                {{ result.name }}
+              </td>
+              <td>
+                <span class="badge {{ result.rating|lower }}">{{ result.rating }}</span>
+                <div class="score">Score {{ result.score }}</div>
+              </td>
+              <td>{{ result.category }}</td>
+              <td class="metrics">
+                <div>P/E: {{ result.metrics.pe_ratio or 'n/a' }}</div>
+                <div>PEG: {{ result.metrics.peg_ratio or 'n/a' }}</div>
+                <div>Rev CAGR 5y: {{ result.metrics.revenue_cagr_5y or 'n/a' }}%</div>
+                <div>EPS Growth 5y: {{ result.metrics.eps_growth_5y or 'n/a' }}%</div>
+                <div>Debt/Equity: {{ result.metrics.debt_to_equity or 'n/a' }}</div>
+                <div>Net Debt/EBITDA: {{ result.metrics.net_debt_to_ebitda or 'n/a' }}</div>
+                <div>Interest Coverage: {{ result.metrics.interest_coverage or 'n/a' }}x</div>
+                <div>Current Ratio: {{ result.metrics.current_ratio or 'n/a' }}</div>
+              </td>
+              <td>
+                <details class="reason-details" open>
+                  <summary>Reason codes</summary>
+                  <div class="reason-list">
+                    {% for reason in result.reasons %}
+                      <span class="reason-badge {{ reason.level }}">
+                        <strong>{{ reason.code }}</strong>
+                        {{ reason.message }}
+                        {% if reason.value is not none %}
+                          <span class="reason-meta">value={{ reason.value }}</span>
+                        {% endif %}
+                        {% if reason.threshold is not none %}
+                          <span class="reason-meta">threshold={{ reason.threshold }}</span>
+                        {% endif %}
+                      </span>
+                    {% endfor %}
+                  </div>
+                </details>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </section>
+
+  <script>
+    window.__RESULTS__ = {{ results_json | safe }};
+    window.__STATIC_PREFIX__ = "{{ static_prefix }}";
+  </script>
+  <script src="{{ static_prefix }}/app.js"></script>
+</body>
+</html>
