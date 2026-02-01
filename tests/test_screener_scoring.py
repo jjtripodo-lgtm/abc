@@ -21,3 +21,8 @@ def test_hard_fail_for_negative_fcf_and_high_debt():
     codes = {reason.code for reason in result.reasons}
     assert "DEBT_HIGH" in codes
     assert "FCF_WEAK" in codes
+
+    for reason in result.reasons:
+        assert reason.level in {"positive", "warning", "negative"}
+        assert reason.code
+        assert reason.message

@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 sys.path.insert(0, str(SRC))
 
+from app import app  # noqa: E402
 from web_app import app  # noqa: E402
 
 

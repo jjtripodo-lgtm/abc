@@ -5,12 +5,27 @@ A Peter Lynch-inspired stock screener with a FastAPI UI and deterministic stub d
 ## Quickstart
 
 ```bash
+pip install -r requirements.lock
+python -m uvicorn src.app:app --reload
 pip install -r requirements.txt
 python -m uvicorn src.web_app:app --reload
 ```
 
 Open `http://localhost:8000` and run the screen using the stub universe.
 
+## Offline install
+
+See [docs/offline_install.md](docs/offline_install.md) for vendored wheel instructions or use the Dockerfile.
+
+## CLI (Yahoo Finance)
+
+```bash
+python src/cli.py AAPL MSFT --risk balanced
+```
+
+## API
+
+- `GET /health` returns `{ "status": "ok" }`.
 ## API
 
 - `GET /api/hello` returns a hello message.

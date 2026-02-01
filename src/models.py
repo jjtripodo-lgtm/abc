@@ -31,6 +31,8 @@ class ReasonCode:
     level: str  # positive | warning | negative
     code: str
     message: str
+    value: Optional[float] = None
+    threshold: Optional[float] = None
 
 
 @dataclass(frozen=True)
