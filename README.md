@@ -7,6 +7,8 @@ A Peter Lynch-inspired stock screener with a FastAPI UI and deterministic stub d
 ```bash
 pip install -r requirements.lock
 python -m uvicorn src.app:app --reload
+pip install -r requirements.txt
+python -m uvicorn src.web_app:app --reload
 ```
 
 Open `http://localhost:8000` and run the screen using the stub universe.
@@ -24,6 +26,8 @@ python src/cli.py AAPL MSFT --risk balanced
 ## API
 
 - `GET /health` returns `{ "status": "ok" }`.
+## API
+
 - `GET /api/hello` returns a hello message.
 - `POST /api/screen` with JSON:
   ```json
