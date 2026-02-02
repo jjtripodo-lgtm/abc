@@ -1,0 +1,2 @@
+# Optional hashes for wheelhouse-based installs.
+# Generate with: python -m pip hash vendor/wheels/*.whl

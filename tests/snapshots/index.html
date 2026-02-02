@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lynch Screener</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; color: #1f2933; }
+    header { margin-bottom: 1.5rem; }
+    .controls { display: grid; gap: 1rem; max-width: 720px; }
+    textarea { width: 100%; height: 80px; }
+    select, button { padding: 0.5rem; }
+    .results { margin-top: 2rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border-bottom: 1px solid #d9e2ec; padding: 0.5rem; text-align: left; vertical-align: top; }
+    .badge { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; }
+    .badge.strong { background: #d4f8d4; }
+    .badge.watch { background: #fff3c4; }
+    .badge.caution { background: #ffe3e3; }
+    .badge.fail { background: #ffd1d1; }
+    .reason { display: inline-block; margin: 0.1rem 0.2rem; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.8rem; }
+    .positive { background: #d4f8d4; }
+    .warning { background: #fff3c4; }
+    .negative { background: #ffd1d1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Peter Lynch Stock Screener</h1>
+    <p>Run a transparent screen with deterministic stub data to see ranked results and reasons.</p>
+  </header>
+  <section class="controls">
+    <label>
+      Tickers (comma-separated):
+      <textarea id="tickers" placeholder="AAPL, MSFT, NVDA"></textarea>
+    </label>
+    <label>
+      Risk tolerance:
+      <select id="risk">
+        <option value="conservative">Conservative</option>
+        <option value="balanced" selected>Balanced</option>
+        <option value="aggressive">Aggressive</option>
+      </select>
+    </label>
+    <label>
+      Universe:
+      <select id="universe">
+        <option value="stub" selected>Stub Universe (10 tickers)</option>
+      </select>
+    </label>
+    <button id="run">Run Screen</button>
+  </section>
+
+  <section class="results">
+    <h2>Results</h2>
+    <div id="status">Enter tickers or use the stub universe, then click Run Screen.</div>
+    <div id="table"></div>
+  </section>
+
+  <script>
+    const runBtn = document.getElementById('run');
+    const statusEl = document.getElementById('status');
+    const tableEl = document.getElementById('table');
+
+    function badgeClass(rating) {
+      return rating ? rating.toLowerCase() : 'caution';
+    }
+
+    function render(results) {
+      if (!results.length) {
+        statusEl.textContent = 'No results returned.';
+        tableEl.innerHTML = '';
+        return;
+      }
+
+      statusEl.textContent = `Returned ${results.length} results.`;
+      const rows = results.map(result => {
+        const reasons = result.reasons.map(reason => {
+          return `<span class="reason ${reason.level}">${reason.message}</span>`;
+        }).join('');
+
+        const metrics = result.metrics;
+        return `
+          <tr>
+            <td><strong>${result.ticker}</strong><br>${result.name}</td>
+            <td><span class="badge ${badgeClass(result.rating)}">${result.rating}</span><br>Score ${result.score}</td>
+            <td>${result.category}</td>
+            <td>
+              P/E: ${metrics.pe_ratio ?? 'n/a'}<br>
+              PEG: ${metrics.peg_ratio ?? 'n/a'}<br>
+              Rev CAGR 5y: ${metrics.revenue_cagr_5y ?? 'n/a'}%<br>
+              EPS Growth 5y: ${metrics.eps_growth_5y ?? 'n/a'}%<br>
+              Debt/Equity: ${metrics.debt_to_equity ?? 'n/a'}<br>
+              Net Debt/EBITDA: ${metrics.net_debt_to_ebitda ?? 'n/a'}<br>
+              Interest Coverage: ${metrics.interest_coverage ?? 'n/a'}x<br>
+              Current Ratio: ${metrics.current_ratio ?? 'n/a'}
+            </td>
+            <td>${reasons}</td>
+          </tr>
+        `;
+      }).join('');
+
+      tableEl.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Score</th>
+              <th>Category</th>
+              <th>Metrics</th>
+              <th>Reasons</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    runBtn.addEventListener('click', async () => {
+      statusEl.textContent = 'Running screen...';
+      tableEl.innerHTML = '';
+
+      const tickersRaw = document.getElementById('tickers').value.trim();
+      const tickers = tickersRaw ? tickersRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const risk = document.getElementById('risk').value;
+      const universe = document.getElementById('universe').value;
+
+      const response = await fetch('/api/screen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tickers, risk_tolerance: risk, universe })
+      });
+
+      if (!response.ok) {
+        statusEl.textContent = 'Failed to run screen.';
+        return;
+      }
+
+      const payload = await response.json();
+      render(payload.results || []);
+    });
+  </script>
+</body>
+</html>
