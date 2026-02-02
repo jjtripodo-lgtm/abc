@@ -2,6 +2,8 @@
 
 A Peter Lynch-inspired stock screener with a FastAPI UI and deterministic stub data.
 
+Repository: [jjtripodo-lgtm/abc](https://github.com/jjtripodo-lgtm/abc)
+
 ## Quickstart
 
 ```bash
